@@ -263,4 +263,41 @@ X-Platform: ios
 
 3.1. Верхнеуровневая блок-схема
 
+```mermaid
+flowchart TB
+    subgraph MS["Микросервисы — источники событий"]
+        CS[Cart Service<br/>брошенная корзина]
+        OS[Order Service<br/>отмена заказа]
+        MK[Marketing Service<br/>рекламные рассылки]
+        OT[Другие сервисы]
+    end
 
+    EB[(Message Broker<br/>Kafka / RabbitMQ)]
+    NS[Notification Service<br/>настройки · шаблон · история]
+    PG[Push Gateway Service<br/>device token · отправка]
+    FCM[FCM — Google<br/>Android]
+    APNS[APNs — Apple<br/>iOS]
+    APP[Мобильное приложение<br/>«Петрушка Зеленая»]
+
+    CS -->|событие| EB
+    OS -->|событие| EB
+    MK -->|событие| EB
+    OT -->|событие| EB
+
+    EB --> NS
+    NS -->|готовый push| PG
+    PG --> FCM
+    PG --> APNS
+    FCM --> APP
+    APNS --> APP
+
+    APP -.->|регистрация device token| PG
+```
+
+**Как читать схему:**
+
+1. Микросервис (Cart / Order / Marketing) фиксирует событие и публикует его в очередь.
+2. Notification Service проверяет настройки пользователя и формирует текст push.
+3. Push Gateway Service находит device token и отправляет уведомление через FCM или APNs.
+4. Пользователь видит push в мобильном приложении.
+5. Пунктирная стрелка: при установке приложение регистрирует device token в Push Gateway.
